@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { askQuestion } from './actions';
@@ -69,12 +70,12 @@ export default function AiAssistantPage() {
           <p className="text-xs text-gray-500">Powered by Amazon Bedrock + Claude 3 Haiku</p>
         </div>
         <div className="ml-auto">
-          <a
+          <Link
             href="/"
             className="text-sm text-blue-600 hover:underline"
           >
             ← Todoアプリへ
-          </a>
+          </Link>
         </div>
       </div>
 

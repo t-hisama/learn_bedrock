@@ -23,7 +23,7 @@ export class ComputeStack extends cdk.Stack {
     super(scope, id, props);
 
     const todoHandler = new SecureLambda(this, 'TodoHandler', {
-      entry: path.join(__dirname, '../../../../../backend/lambda/handler.ts'),
+      entry: path.join(__dirname, '../../../../backend/lambda/handler.ts'),
       handler: 'main',
       environment: {
         TABLE_NAME: props.todoTable.tableName,

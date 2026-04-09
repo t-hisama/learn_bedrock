@@ -146,7 +146,7 @@ export class BedrockStack extends cdk.Stack {
 
     // RAG Lambda (Python) - RetrieveAndGenerate APIを呼び出す
     const ragFunction = new PythonFunction(this, 'RagFunction', {
-      codePath: path.join(__dirname, '../../../../../backend/lambda-python/bedrock_rag'),
+      codePath: path.join(__dirname, '../../../../backend/lambda-python/bedrock_rag'),
       handler: 'handler.handler',
       environment: {
         KNOWLEDGE_BASE_ID: knowledgeBase.attrKnowledgeBaseId,

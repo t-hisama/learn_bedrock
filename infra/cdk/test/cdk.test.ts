@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { StorageStack } from '../lib/stacks/storage-stack';
 import { ComputeStack } from '../lib/stacks/compute-stack';
 
@@ -48,14 +48,14 @@ describe('StorageStack', () => {
   test('S3 bucket enforces SSL', () => {
     template.hasResourceProperties('AWS::S3::BucketPolicy', {
       PolicyDocument: {
-        Statement: [
-          {
+        Statement: Match.arrayWith([
+          Match.objectLike({
             Effect: 'Deny',
             Condition: {
               Bool: { 'aws:SecureTransport': 'false' },
             },
-          },
-        ],
+          }),
+        ]),
       },
     });
   });

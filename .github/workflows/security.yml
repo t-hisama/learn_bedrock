@@ -86,6 +86,13 @@ jobs:
         working-directory: infra/cdk
         run: npm ci
 
+      - name: Install backend dependencies
+        working-directory: backend/lambda
+        run: npm ci
+
+      - name: Create frontend build placeholder (FrontendStack asset解決用)
+        run: mkdir -p frontend/out
+
       - name: CDK synth (CloudFormationテンプレート生成)
         working-directory: infra/cdk
         run: npx cdk synth --output ./cdk.out
@@ -123,6 +130,6 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
+          base: ${{ github.event.before }}
           head: HEAD
           extra_args: --only-verified

@@ -62,7 +62,7 @@ export class ApiStack extends cdk.Stack {
     this.graphqlApi = new appsync.GraphqlApi(this, 'GraphqlApi', {
       name: 'PlatformTemplateApi',
       schema: appsync.SchemaFile.fromAsset(
-        path.join(__dirname, '../../../../../backend/graphql/schema.graphql'),
+        path.join(__dirname, '../../../../backend/graphql/schema.graphql'),
       ),
       authorizationConfig: {
         defaultAuthorization: {
@@ -96,13 +96,13 @@ export class ApiStack extends cdk.Stack {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          '../../../../../backend/graphql/resolvers/listTodos.request.vtl',
+          '../../../../backend/graphql/resolvers/listTodos.request.vtl',
         ),
       ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          '../../../../../backend/graphql/resolvers/listTodos.response.vtl',
+          '../../../../backend/graphql/resolvers/listTodos.response.vtl',
         ),
       ),
     });
@@ -114,13 +114,13 @@ export class ApiStack extends cdk.Stack {
       requestMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          '../../../../../backend/graphql/resolvers/createTodo.request.vtl',
+          '../../../../backend/graphql/resolvers/createTodo.request.vtl',
         ),
       ),
       responseMappingTemplate: appsync.MappingTemplate.fromFile(
         path.join(
           __dirname,
-          '../../../../../backend/graphql/resolvers/createTodo.response.vtl',
+          '../../../../backend/graphql/resolvers/createTodo.response.vtl',
         ),
       ),
     });

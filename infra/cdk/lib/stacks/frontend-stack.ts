@@ -93,7 +93,7 @@ export class FrontendStack extends cdk.Stack {
     // next.config.ts に output: 'export' の設定が必要
     new s3deploy.BucketDeployment(this, 'DeployWebsite', {
       sources: [
-        s3deploy.Source.asset(path.join(__dirname, '../../../../../frontend/out')),
+        s3deploy.Source.asset(path.join(__dirname, '../../../../frontend/out')),
       ],
       destinationBucket: this.websiteBucket,
       distribution: this.distribution,
