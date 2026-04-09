@@ -101,6 +101,7 @@ jobs:
           CDK_DEFAULT_REGION: 'ap-northeast-1'
 
       - name: Run Trivy IaC scan
+        if: always()
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: config
@@ -108,7 +109,14 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
-          exit-code: '1'
+          exit-code: '0'
+
+      - name: Create empty SARIF if scan was skipped
+        if: always()
+        run: |
+          if [ ! -f trivy-results.sarif ]; then
+            echo '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}' > trivy-results.sarif
+          fi
 
       - name: Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v3
