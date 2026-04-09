@@ -1,0 +1,55 @@
+# Platform Template - AppSync GraphQL スキーマ
+#
+# 認証: デフォルトはCognito UserPool (本番)
+#        API Key は開発・テスト専用
+#
+# KDDI要件対応: AppSync, GraphQL, Subscription (リアルタイム更新)
+
+type Todo {
+  id: ID!
+  title: String!
+  createdAt: AWSDateTime!
+}
+
+type AIResponse {
+  answer: String!
+  sessionId: String!
+  citations: [Citation!]!
+}
+
+type Citation {
+  content: String!
+  location: String!
+  score: Float
+}
+
+type TodoConnection {
+  items: [Todo!]!
+}
+
+type Query {
+  # Todo一覧取得 (DynamoDB scan)
+  listTodos: TodoConnection!
+
+  # AIアシスタントへの質問 (Bedrock RAG)
+  # sessionIdを指定すると会話の文脈を維持する
+  searchKnowledge(query: String!, sessionId: String): AIResponse!
+}
+
+type Mutation {
+  # Todo作成
+  createTodo(title: String!): Todo!
+
+  # Todo削除
+  deleteTodo(id: ID!): Boolean!
+}
+
+type Subscription {
+  # Todo作成のリアルタイム通知
+  onCreateTodo: Todo
+    @aws_subscribe(mutations: ["createTodo"])
+
+  # Todo削除のリアルタイム通知
+  onDeleteTodo: ID
+    @aws_subscribe(mutations: ["deleteTodo"])
+}

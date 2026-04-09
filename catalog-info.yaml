@@ -1,0 +1,105 @@
+# Backstage カタログエンティティ記述子
+#
+# KDDI要件対応: 開発者向けポータル (Backstage) との統合
+#
+# 使い方:
+#   Backstageのcatalog-import URLにこのファイルのGitHub URLを登録する
+#   例: https://github.com/your-org/serverless-platform-template/blob/main/catalog-info.yaml
+#
+# TechDocs (docs-as-code):
+#   .backstage/docs/ 配下のMarkdownがBackstageのドキュメントとして表示される
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: serverless-platform-template
+  title: Serverless Platform Template
+  description: >
+    開発者向けサーバレスアプリケーションのリファレンスアーキテクチャ。
+    Next.js + Lambda + DynamoDB + CDK + Bedrock RAG を統合した
+    Platform Engineering向け共通テンプレート。
+  annotations:
+    # TechDocs: このディレクトリのMarkdownをドキュメントとして表示
+    backstage.io/techdocs-ref: dir:.
+    # GitHub連携
+    github.com/project-slug: your-org/serverless-platform-template
+    # CDKスタック情報
+    aws.amazon.com/cdk-stack: CdkStack
+  tags:
+    - aws
+    - serverless
+    - typescript
+    - python
+    - bedrock
+    - kendra
+    - platform-engineering
+  links:
+    - url: https://github.com/your-org/serverless-platform-template
+      title: GitHub Repository
+      icon: github
+spec:
+  type: template
+  lifecycle: production
+  owner: platform-engineering
+  system: developer-platform
+  dependsOn:
+    - resource:default/todo-dynamodb-table
+    - resource:default/platform-knowledge-base-bucket
+
+---
+# GraphQL API エンティティ (AppSync)
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: platform-graphql-api
+  title: Platform Template GraphQL API
+  description: >
+    AppSync GraphQL API。Todo管理とBedrock RAGによる
+    AIアシスタント機能を提供する。
+  annotations:
+    github.com/project-slug: your-org/serverless-platform-template
+  tags:
+    - graphql
+    - appsync
+    - bedrock
+spec:
+  type: graphql
+  lifecycle: production
+  owner: platform-engineering
+  system: developer-platform
+  definition:
+    $text: ./backend/graphql/schema.graphql
+
+---
+# DynamoDB テーブルリソース
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: todo-dynamodb-table
+  title: Todo DynamoDB Table
+  description: Todoアイテムを格納するDynamoDBテーブル (PAY_PER_REQUEST)
+  tags:
+    - aws
+    - dynamodb
+spec:
+  type: database
+  owner: platform-engineering
+  system: developer-platform
+
+---
+# S3 ナレッジベースバケット
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: platform-knowledge-base-bucket
+  title: Platform Knowledge Base S3 Bucket
+  description: Kendra/Bedrockのドキュメントソース用S3バケット
+  tags:
+    - aws
+    - s3
+    - bedrock
+    - kendra
+spec:
+  type: storage
+  owner: platform-engineering
+  system: developer-platform

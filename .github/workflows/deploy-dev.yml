@@ -1,0 +1,78 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.backstage/**'
+
+# 同時デプロイを防止 (前のデプロイが完了するまで待機)
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: CDK Deploy (dev)
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write  # OIDC認証に必要
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: infra/cdk/package-lock.json
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # AuthStackでCDKが作成したGitHub Actions用IAMロール
+          # AWS_ROLE_TO_ASSUME シークレットにロールARNを設定すること
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ap-northeast-1
+          role-session-name: GitHubActions-Deploy-${{ github.run_id }}
+
+      - name: Install CDK dependencies
+        working-directory: infra/cdk
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend/lambda
+        run: npm ci
+
+      - name: CDK diff (変更内容の確認)
+        working-directory: infra/cdk
+        run: npx cdk diff --all
+        env:
+          CDK_DEFAULT_REGION: ap-northeast-1
+
+      - name: CDK deploy (必須スタック)
+        working-directory: infra/cdk
+        run: |
+          npx cdk deploy \
+            StorageStack \
+            AuthStack \
+            ComputeStack \
+            ApiStack \
+            --require-approval never \
+            --outputs-file ./cdk-outputs.json
+        env:
+          CDK_DEFAULT_REGION: ap-northeast-1
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs-dev
+          path: infra/cdk/cdk-outputs.json
+          retention-days: 7

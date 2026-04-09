@@ -1,0 +1,45 @@
+services:
+  # LocalStack: AWSサービスのローカルエミュレーター
+  # DynamoDB, S3のローカルテスト用
+  #
+  # 起動: docker compose up -d
+  # 停止: docker compose down
+  # ログ: docker compose logs -f localstack
+  localstack:
+    image: localstack/localstack:3
+    container_name: platform-localstack
+    ports:
+      - "4566:4566"     # LocalStack Gateway
+      - "4510-4559:4510-4559"  # 外部サービスポート範囲
+    environment:
+      - SERVICES=dynamodb,s3
+      - AWS_DEFAULT_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - DEBUG=0
+      - PERSISTENCE=1  # コンテナ再起動後もデータ保持
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./localstack-data}:/var/lib/localstack"
+      - "./scripts/localstack-init:/etc/localstack/init/ready.d:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DynamoDB Admin UI (オプション)
+  # DynamoDBのデータをブラウザで確認できる
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: platform-dynamo-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack:4566
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      localstack:
+        condition: service_healthy

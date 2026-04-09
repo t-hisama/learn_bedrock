@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+# Platform Template - SAM テンプレート
+#
+# AWS CDK と SAM の使い分け:
+#   CDK: 複数スタック・複数リソースを横断する複雑なインフラ管理
+#   SAM: 単一のLambda関数やシンプルなサーバレスアプリの開発・ローカルテスト
+#
+# このテンプレートはBedrock RAG Lambdaの単体デプロイ用。
+# CDKのBedrockStackと同じ機能を提供するが、sam local invokeでローカルテストできる。
+#
+# ローカルテスト:
+#   sam build
+#   sam local invoke BedrockRagFunction --event events/rag_query.json
+#
+# デプロイ:
+#   sam deploy --guided  (初回)
+#   sam deploy           (2回目以降, samconfig.tomlから設定を読み込む)
+
+Description: Platform Template - Bedrock RAG Lambda (SAM版)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Tracing: Active
+    MemorySize: 512
+    Timeout: 60
+    Layers:
+      # AWS Lambda Powertools (ap-northeast-1)
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:79
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: rag-assistant
+        LOG_LEVEL: INFO
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: デプロイ環境
+
+  KnowledgeBaseId:
+    Type: String
+    Description: Bedrock Knowledge Base ID (BedrockStackのOutputsから取得)
+
+  ModelArn:
+    Type: String
+    Default: arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0
+    Description: 使用するBedrockモデルのARN
+
+Resources:
+  # Bedrock RAG Lambda関数
+  BedrockRagFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../backend/lambda-python/bedrock_rag/
+      Handler: handler.handler
+      Description: Amazon Bedrock RAG - 開発者向けAIアシスタント
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
+          MODEL_ARN: !Ref ModelArn
+          REGION: !Sub ${AWS::Region}
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt RagDLQ.Arn
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:RetrieveAndGenerate
+                - bedrock:Retrieve
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/${KnowledgeBaseId}
+                - !Ref ModelArn
+      Events:
+        # API Gatewayエンドポイント (CognitoJWTオーソライザー付き)
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /ask
+            Method: post
+            RestApiId: !Ref RagApi
+
+  # Kendra検索Lambda関数
+  KendraSearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../backend/lambda-python/kendra_search/
+      Handler: handler.handler
+      Description: Amazon Kendra - 開発者向けドキュメント検索
+      Environment:
+        Variables:
+          KENDRA_INDEX_ID: !Sub '{{resolve:ssm:/platform-template/kendra/index-id}}'
+          MAX_RESULTS: '5'
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kendra:Query
+                - kendra:GetQuerySuggestions
+              Resource: !Sub arn:aws:kendra:${AWS::Region}:${AWS::AccountId}:index/*
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /search
+            Method: post
+            RestApiId: !Ref RagApi
+
+  # REST API Gateway
+  RagApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub platform-rag-api-${Environment}
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  # Dead Letter Queue
+  RagDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 1209600  # 14日間
+      SqsManagedSseEnabled: true
+
+Outputs:
+  RagApiUrl:
+    Description: RAG API エンドポイントURL
+    Value: !Sub https://${RagApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+
+  BedrockRagFunctionArn:
+    Description: Bedrock RAG Lambda ARN
+    Value: !GetAtt BedrockRagFunction.Arn

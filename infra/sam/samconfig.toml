@@ -1,0 +1,37 @@
+# SAM デプロイ設定ファイル
+# sam deploy コマンドのデフォルト値を定義する
+#
+# 使い方:
+#   sam deploy                    # デフォルト (dev環境)
+#   sam deploy --config-env prod  # prod環境
+
+version = 0.1
+
+[default.global.parameters]
+stack_name = "platform-rag-dev"
+
+[default.deploy.parameters]
+region = "ap-northeast-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true  # SAMアーティファクト用S3バケットを自動作成
+parameter_overrides = [
+  "Environment=dev",
+  # KnowledgeBaseId は cdk deploy BedrockStack のOutputsから取得
+  # "KnowledgeBaseId=xxxxxx",
+]
+tags = "Project=platform-template Environment=dev"
+
+[prod.global.parameters]
+stack_name = "platform-rag-prod"
+
+[prod.deploy.parameters]
+region = "ap-northeast-1"
+confirm_changeset = true  # 本番は変更前に確認
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+parameter_overrides = [
+  "Environment=prod",
+  # "KnowledgeBaseId=yyyyyy",
+]
+tags = "Project=platform-template Environment=prod"

@@ -1,0 +1,31 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/requirements.txt'
+      - '**/requirements-dev.txt'
+
+# PRに脆弱な依存関係が含まれる場合にブロックする
+# GitHub Advanced Security が有効なリポジトリで動作
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          # ライセンス制限 (商用プロジェクトでGPLを禁止)
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: always

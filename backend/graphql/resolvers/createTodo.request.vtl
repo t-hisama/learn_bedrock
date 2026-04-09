@@ -1,0 +1,21 @@
+## createTodo - DynamoDB PutItem リクエストマッピング
+## 新しいTodoアイテムを作成する
+## titleのバリデーションを含む
+#if($ctx.args.title.isEmpty() || $ctx.args.title.length() > 200)
+  $util.error("title must be between 1 and 200 characters", "ValidationError")
+#end
+{
+  "version": "2018-05-29",
+  "operation": "PutItem",
+  "key": {
+    "id": $util.dynamodb.toDynamoDBJson($util.autoId())
+  },
+  "attributeValues": {
+    "title": $util.dynamodb.toDynamoDBJson($ctx.args.title),
+    "createdAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
+    "owner": $util.dynamodb.toDynamoDBJson($ctx.identity.username)
+  },
+  "condition": {
+    "expression": "attribute_not_exists(id)"
+  }
+}

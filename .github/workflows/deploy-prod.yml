@@ -1,0 +1,74 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+
+# 本番デプロイは同時実行を完全に禁止
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: CDK Deploy (prod)
+    runs-on: ubuntu-latest
+    environment: prod  # GitHub Environmentの承認ゲートを使用
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: infra/cdk/package-lock.json
+
+      - name: Configure AWS credentials (OIDC - prod)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PROD }}
+          aws-region: ap-northeast-1
+          role-session-name: GitHubActions-ProdDeploy-${{ github.run_id }}
+
+      - name: Install CDK dependencies
+        working-directory: infra/cdk
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend/lambda
+        run: npm ci
+
+      - name: CDK diff (本番への変更差分確認)
+        working-directory: infra/cdk
+        run: npx cdk diff --all --context env=prod
+        env:
+          CDK_DEFAULT_REGION: ap-northeast-1
+
+      - name: CDK deploy (本番)
+        working-directory: infra/cdk
+        run: |
+          npx cdk deploy \
+            StorageStack \
+            AuthStack \
+            ComputeStack \
+            ApiStack \
+            --require-approval never \
+            --context env=prod \
+            --outputs-file ./cdk-outputs-prod.json
+        env:
+          CDK_DEFAULT_REGION: ap-northeast-1
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs-prod-${{ github.event.release.tag_name }}
+          path: infra/cdk/cdk-outputs-prod.json
+          retention-days: 90

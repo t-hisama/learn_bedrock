@@ -1,0 +1,39 @@
+{
+  "name": "serverless-platform-template",
+
+  // Node.js 20 + git + common tools が含まれるMicrosoft公式イメージ
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+
+  // AWS CLIをfeatureとして追加（cdk deploy に必要）
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+
+  // 初回起動後に各ディレクトリの依存関係を一括インストール
+  "postCreateCommand": "npm ci --prefix frontend && npm ci --prefix backend/lambda && npm ci --prefix infra/cdk",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // TypeScript / ESLint / Prettier
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        // AWS Toolkit（CDKスタックの確認、リソースブラウジング）
+        "amazonwebservices.aws-toolkit-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  },
+
+  // Next.js dev server のポートをホストに転送
+  "forwardPorts": [3000],
+
+  // ホストの ~/.aws をマウントしてAWS認証情報を引き継ぐ（ローカル開発用）
+  "mounts": [
+    "source=${localEnv:HOME}/.aws,target=/root/.aws,type=bind,consistency=cached"
+  ]
+}
