@@ -48,8 +48,4 @@ type Subscription {
   # Todo作成のリアルタイム通知
   onCreateTodo: Todo
     @aws_subscribe(mutations: ["createTodo"])
-
-  # Todo削除のリアルタイム通知
-  onDeleteTodo: ID
-    @aws_subscribe(mutations: ["deleteTodo"])
 }
