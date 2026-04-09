@@ -91,7 +91,7 @@ jobs:
         run: npm ci
 
       - name: Create frontend build placeholder (FrontendStack asset解決用)
-        run: mkdir -p frontend/out
+        run: mkdir -p frontend/out && echo '<!DOCTYPE html><html><body></body></html>' > frontend/out/index.html
 
       - name: CDK synth (CloudFormationテンプレート生成)
         working-directory: infra/cdk

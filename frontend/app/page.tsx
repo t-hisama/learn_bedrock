@@ -10,7 +10,7 @@ const apiBaseUrl = process.env.API_BASE_URL;
 
 async function fetchTodos(): Promise<Todo[]> {
   if (!apiBaseUrl) {
-    throw new Error('API_BASE_URL is not set');
+    return [];
   }
 
   const res = await fetch(`${apiBaseUrl}/todos`, {

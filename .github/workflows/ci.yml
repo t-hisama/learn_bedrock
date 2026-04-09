@@ -68,7 +68,7 @@ jobs:
         run: npm test -- --ci
 
       - name: Create frontend build placeholder (FrontendStack asset解決用)
-        run: mkdir -p frontend/out
+        run: mkdir -p frontend/out && echo '<!DOCTYPE html><html><body></body></html>' > frontend/out/index.html
 
       - name: CDK synth
         working-directory: infra/cdk
