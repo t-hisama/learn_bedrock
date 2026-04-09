@@ -67,6 +67,12 @@ jobs:
         working-directory: infra/cdk
         run: npm test -- --ci
 
+      - name: Create frontend build placeholder (FrontendStack asset解決用)
+        run: mkdir -p frontend/out
+
       - name: CDK synth
         working-directory: infra/cdk
         run: npx cdk synth
+        env:
+          CDK_DEFAULT_ACCOUNT: '123456789012'
+          CDK_DEFAULT_REGION: 'ap-northeast-1'
