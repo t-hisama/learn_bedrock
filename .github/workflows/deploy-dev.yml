@@ -53,7 +53,7 @@ jobs:
 
       - name: CDK diff (変更内容の確認)
         working-directory: infra/cdk
-        run: npx cdk diff --all
+        run: npx cdk diff StorageStack AuthStack ComputeStack ApiStack
         env:
           CDK_DEFAULT_REGION: ap-northeast-1
 
